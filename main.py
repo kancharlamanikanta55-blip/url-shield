@@ -22,11 +22,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class URLData(BaseModel):
     url: str
-
+    
 @app.get("/")
 async def root():
-    return FileResponse("static/index.html")
-
+    return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 @app.post("/classify-url/")
 async def classify_url(url_data: URLData):
     features = main(url_data.url)
