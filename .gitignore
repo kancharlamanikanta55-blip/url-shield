@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+malicious_phish.csv/
+model.pkl
+malicious_phish_new.csv

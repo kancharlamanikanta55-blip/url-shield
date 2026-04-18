@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReNoteAI — URL Shield</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #22c55e; --green-dim: #16a34a; --green-glow: rgba(34,197,94,0.18);
+      --green-faint: rgba(34,197,94,0.07); --black: #0a0a0a; --surface: #111111;
+      --surface2: #1a1a1a; --border: rgba(255,255,255,0.07); --text: #f0f0f0;
+      --muted: #666; --safe: #22c55e; --malicious: #ef4444;
+    }
+    html, body { height: 100%; background: var(--black); color: var(--text); font-family: 'Syne', sans-serif; overflow-x: hidden; }
+    body::after { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
+    .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 60px 20px 80px; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 64px; animation: fadeDown 0.6s ease both; }
+    .logo-ring { width: 52px; height: 52px; border: 2.5px solid var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 18px var(--green-glow); }
+    .brand-name { font-size: 1.6rem; font-weight: 800; } .brand-name span { color: var(--green); }
+    .brand-sub { font-size: .72rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
+    .hero { text-align: center; max-width: 680px; margin-bottom: 48px; animation: fadeDown 0.7s 0.1s ease both; }
+    .hero h1 { font-size: clamp(2rem,5vw,3.4rem); font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
+    .hero h1 em { font-style: normal; color: var(--green); }
+    .hero p { margin-top: 16px; font-size: 1rem; color: var(--muted); font-family: 'DM Mono',monospace; }
+    .card { width: 100%; max-width: 680px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; box-shadow: 0 8px 48px rgba(0,0,0,0.5); animation: fadeUp 0.7s 0.2s ease both; }
+    .input-label { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-family: 'DM Mono',monospace; }
+    .input-row { display: flex; gap: 12px; }
+    .url-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-family: 'DM Mono',monospace; font-size: .9rem; color: var(--text); outline: none; transition: border-color .2s,box-shadow .2s; }
+    .url-input::placeholder { color: #444; }
+    .url-input:focus { border-color: var(--green-dim); box-shadow: 0 0 0 3px var(--green-faint); }
+    .scan-btn { padding: 14px 28px; background: var(--green); color: #000; font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: none; border-radius: 10px; cursor: pointer; transition: background .2s,transform .1s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .scan-btn:hover { background: #4ade80; }
+    .scan-btn:active { transform: scale(0.97); }
+    .scan-btn:disabled { background: #1f3a2a; color: #2e6644; cursor: not-allowed; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+    .loading .spinner { display: block; } .loading .btn-label { display: none; }
+    .result-area { margin-top: 24px; display: none; } .result-area.visible { display: block; animation: fadeUp 0.4s ease both; }
+    .result-card { border-radius: 12px; padding: 24px 28px; border: 1px solid; display: flex; align-items: center; gap: 20px; }
+    .result-card.SAFE { border-color: var(--safe); background: rgba(34,197,94,0.08); }
+    .result-card.MALICIOUS { border-color: var(--malicious); background: rgba(239,68,68,0.08); }
+    .result-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+    .SAFE .result-icon { background: rgba(34,197,94,0.15); }
+    .MALICIOUS .result-icon { background: rgba(239,68,68,0.15); }
+    .result-verdict { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+    .SAFE .result-verdict { color: var(--safe); }
+    .MALICIOUS .result-verdict { color: var(--malicious); }
+    .result-url { font-family: 'DM Mono',monospace; font-size: .78rem; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
+    .result-desc { font-size: .82rem; color: #999; margin-top: 6px; }
+    .error-box { margin-top: 16px; padding: 14px 18px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; font-family: 'DM Mono',monospace; font-size: .82rem; color: #f87171; display: none; }
+    .error-box.visible { display: block; }
+    .stats-strip { width: 100%; max-width: 680px; display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 32px; animation: fadeUp 0.7s 0.3s ease both; }
+    .stat-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-num { font-size: 1.5rem; font-weight: 800; }
+    .stat-num.safe { color: var(--safe); } .stat-num.mal { color: var(--malicious); }
+    .stat-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: 'DM Mono',monospace; margin-top: 3px; }
+    .history-section { width: 100%; max-width: 680px; margin-top: 40px; }
+    .section-title { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono',monospace; margin-bottom: 12px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: background .2s; }
+    .history-item:hover { background: var(--surface2); }
+    .hist-badge { font-size: .68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; }
+    .hist-badge.SAFE { background: rgba(34,197,94,0.15); color: var(--safe); }
+    .hist-badge.MALICIOUS { background: rgba(239,68,68,0.15); color: var(--malicious); }
+    .hist-url { font-family: 'DM Mono',monospace; font-size: .8rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    footer { margin-top: 60px; color: #333; font-size: .72rem; font-family: 'DM Mono',monospace; text-align: center; }
+    footer span { color: var(--green); }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="logo-ring">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M4 14 Q8 6 14 10 Q20 14 24 14" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M4 14 Q8 22 14 18 Q20 14 24 14" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" opacity=".5"/>
+        <path d="M22 10 L24 14 L20 14" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M6 18 L4 14 L8 14" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Re<span>Note</span>AI</div>
+      <div class="brand-sub">URL Shield</div>
+    </div>
+  </header>
+  <div class="hero">
+    <h1>Detect <em>malicious</em> URLs<br>before they strike</h1>
+    <p>// powered by machine learning · xgboost · 96.52% accuracy</p>
+  </div>
+  <div class="card">
+    <div class="input-label">Enter URL to scan</div>
+    <div class="input-row">
+      <input class="url-input" id="urlInput" type="text" placeholder="https://example.com/suspicious-path" autocomplete="off" spellcheck="false"/>
+      <button class="scan-btn" id="scanBtn" onclick="scanURL()">
+        <div class="spinner"></div>
+        <span class="btn-label">⬡ Scan</span>
+      </button>
+    </div>
+    <div class="result-area" id="resultArea">
+      <div class="result-card" id="resultCard">
+        <div class="result-icon" id="resultIcon"></div>
+        <div class="result-body">
+          <div class="result-verdict" id="resultVerdict"></div>
+          <div class="result-url" id="resultUrl"></div>
+          <div class="result-desc" id="resultDesc"></div>
+        </div>
+      </div>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+  <div class="stats-strip">
+    <div class="stat-cell"><div class="stat-num safe" id="statSafe">0</div><div class="stat-label">Safe</div></div>
+    <div class="stat-cell"><div class="stat-num mal" id="statMal">0</div><div class="stat-label">Malicious</div></div>
+  </div>
+  <div class="history-section" id="historySection" style="display:none;">
+    <div class="section-title">// Scan history</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+  <footer>ReNoteAI &nbsp;·&nbsp; URL Shield &nbsp;·&nbsp; <span>url-shield-psms.onrender.com</span></footer>
+</div>
+<script>
+  const API = 'https://url-shield-psms.onrender.com/classify-url/';
+  const descriptions = {
+    SAFE: '✔ This URL appears legitimate and safe to visit.',
+    MALICIOUS: '✖ This URL is malicious. Do not visit!'
+  };
+  const icons = { SAFE: '🛡️', MALICIOUS: '☠️' };
+  let stats = { SAFE: 0, MALICIOUS: 0 };
+  let history = [];
+  const urlInput = document.getElementById('urlInput');
+  const scanBtn = document.getElementById('scanBtn');
+  const resultArea = document.getElementById('resultArea');
+  const resultCard = document.getElementById('resultCard');
+  const errorBox = document.getElementById('errorBox');
+  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') scanURL(); });
+  async function scanURL() {
+    const url = urlInput.value.trim();
+    if (!url) { showError('Please enter a URL to scan.'); return; }
+    hideError();
+    resultArea.classList.remove('visible');
+    setLoading(true);
+    try {
+      const resp = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+      if (!resp.ok) throw new Error('Server returned ' + resp.status);
+      const data = await resp.json();
+      showResult(data.url, data.classification);
+      addHistory(data.url, data.classification);
+      updateStats(data.classification);
+    } catch(err) {
+      showError('Cannot reach the backend. Make sure the server is running.');
+    } finally { setLoading(false); }
+  }
+  function showResult(url, cls) {
+    resultCard.className = 'result-card ' + cls;
+    document.getElementById('resultIcon').textContent = icons[cls] || '❓';
+    document.getElementById('resultVerdict').textContent = cls;
+    document.getElementById('resultUrl').textContent = url;
+    document.getElementById('resultDesc').textContent = descriptions[cls] || 'Unknown.';
+    resultArea.classList.add('visible');
+  }
+  function addHistory(url, cls) {
+    history.unshift({ url, cls });
+    if (history.length > 8) history.pop();
+    const section = document.getElementById('historySection');
+    const list = document.getElementById('historyList');
+    section.style.display = 'block';
+    list.innerHTML = history.map(h => `<div class="history-item" onclick="reScan(this.dataset.url)" data-url="${h.url.replace(/"/g,'&quot;')}"><span class="hist-badge ${h.cls}">${h.cls}</span><span class="hist-url">${h.url}</span></div>`).join('');
+  }
+  function reScan(url) { urlInput.value = url; scanURL(); }
+  function updateStats(cls) {
+    if (stats.hasOwnProperty(cls)) {
+      stats[cls]++;
+      document.getElementById('statSafe').textContent = stats.SAFE;
+      document.getElementById('statMal').textContent = stats.MALICIOUS;
+    }
+  }
+  function setLoading(on) { scanBtn.disabled = on; scanBtn.classList.toggle('loading', on); }
+  function showError(msg) { errorBox.textContent = msg; errorBox.classList.add('visible'); }
+  function hideError() { errorBox.classList.remove('visible'); }
+</script>
+</body>
+</html>
