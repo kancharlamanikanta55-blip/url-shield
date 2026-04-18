@@ -1,3 +1,17 @@
+import os
+
+# Download dataset if not present
+if not os.path.exists("malicious_phish_new.csv"):
+    print("Downloading dataset from Kaggle...")
+    os.system("pip install kaggle")
+    os.system("kaggle datasets download -d sid321axn/malicious-urls-dataset --unzip")
+    # Rename to expected filename
+    for f in os.listdir('.'):
+        if f.endswith('.csv') and f != 'malicious_phish_new.csv':
+            os.rename(f, 'malicious_phish_new.csv')
+            break
+    print("Dataset ready!")
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
