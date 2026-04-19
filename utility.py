@@ -9,6 +9,7 @@ def having_ip_address(url):
         '((0x[0-9a-fA-F]{1,2})\\.(0x[0-9a-fA-F]{1,2})\\.(0x[0-9a-fA-F]{1,2})\\.(0x[0-9a-fA-F]{1,2})\\/)|'
         '(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}', url)
     return 1 if match else 0
+
 def abnormal_url(url):
     try:
         hostname = str(urlparse(url).hostname)
@@ -27,6 +28,7 @@ def count_per(url):       return url.count('%')
 def count_ques(url):      return url.count('?')
 def count_hyphen(url):    return url.count('-')
 def count_equal(url):     return url.count('=')
+
 def url_length(url):
     try:    return len(str(url))
     except: return 0
@@ -36,16 +38,12 @@ def hostname_length(url):
     except: return 0
 
 def no_of_dir(url):
-    try:
-        return urlparse(url).path.count('/')
-    except:
-        return 0
+    try:    return urlparse(url).path.count('/')
+    except: return 0
 
 def no_of_embed(url):
-    try:
-        return urlparse(url).path.count('//')
-    except:
-        return 0
+    try:    return urlparse(url).path.count('//')
+    except: return 0
 
 def shortening_service(url):
     match = re.search(
@@ -67,42 +65,12 @@ def letter_count(url):
     return sum(1 for c in url if c.isalpha())
 
 def fd_length(url):
-    try:
-        return len(urlparse(url).path.split('/')[1])
-    except:
-        return 0
-
+    try:    return len(urlparse(url).path.split('/')[1])
+    except: return 0
 
 def tld_length(tld):
     try:    return len(tld)
     except: return -1
-
-import math
-
-def url_entropy(url):
-    try:
-        prob = [float(url.count(c)) / len(url) for c in set(url)]
-        return -sum(p * math.log(p, 2) for p in prob)
-    except:
-        return 0
-
-def special_char_count(url):
-    return sum(1 for c in url if c in '~_*[]{}|\\^`<>')
-
-def subdomain_count(url):
-    try:
-        hostname = urlparse(url).hostname
-        if hostname:
-            return len(hostname.split('.')) - 2
-        return 0
-    except:
-        return 0
-
-def path_length(url):
-    try:
-        return len(urlparse(url).path)
-    except:
-        return 0
 
 def main(url):
     status = []
@@ -128,8 +96,5 @@ def main(url):
     status.append(fd_length(url))
     tld = get_tld(url, fail_silently=True)
     status.append(tld_length(tld))
-    status.append(url_entropy(url))
-    status.append(special_char_count(url))
-    status.append(subdomain_count(url))
-    status.append(path_length(url))
+    
     return status
