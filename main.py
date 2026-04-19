@@ -7,8 +7,14 @@ import numpy as np
 import joblib
 from utility import main
 
-model = joblib.load("model.pkl")
+
 app = FastAPI(title="ReNoteAI URL Shield")
+model = None
+
+@app.on_event("startup")
+async def load_model():
+    global model
+    model = joblib.load("model.pkl")
 
 app.add_middleware(
     CORSMiddleware,
