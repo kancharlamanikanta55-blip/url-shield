@@ -27,7 +27,7 @@ from utility import (
     count_atrate, no_of_dir, no_of_embed, shortening_service,
     count_https, count_http, count_per, count_ques, count_hyphen,
     count_equal, url_length, hostname_length, suspicious_words,
-    digit_count, letter_count, fd_length, tld_length,
+    digit_count, letter_count, fd_length, tld_length
     
 )
 from tld import get_tld
