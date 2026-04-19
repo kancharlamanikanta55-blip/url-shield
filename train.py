@@ -1,5 +1,10 @@
 import os
 
+# Always delete old model to force retrain with correct features
+if os.path.exists("model.pkl"):
+    os.remove("model.pkl")
+    print("Removed old model.pkl")
+
 # Download dataset if not present
 if not os.path.exists("malicious_phish_new.csv"):
     print("Downloading dataset from Kaggle...")
