@@ -41,7 +41,8 @@ SAFE_DOMAINS = {
     'amazon.com', 'facebook.com', 'twitter.com', 'instagram.com',
     'linkedin.com', 'github.com', 'wikipedia.org', 'netflix.com',
     'reddit.com', 'yahoo.com', 'bing.com', 'stackoverflow.com',
-    'whatsapp.com', 'zoom.us', 'dropbox.com', 'spotify.com'
+    'whatsapp.com', 'zoom.us', 'dropbox.com', 'spotify.com',
+    'onrender.com', 'url-shield-psms.onrender.com'
 }
 
 @app.post("/classify-url/")
