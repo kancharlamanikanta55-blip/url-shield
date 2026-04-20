@@ -37,6 +37,15 @@ print("Loading dataset...")
 df = pd.read_csv("malicious_phish_new.csv")
 print(f"Dataset loaded: {len(df)} rows")
 
+# Normalize URLs - add https:// if missing
+def normalize_url(url):
+    if not url.startswith('http://') and not url.startswith('https://'):
+        return 'https://' + url
+    return url
+
+df['url'] = df['url'].apply(normalize_url)
+print("URLs normalized!")
+
 # Extract features
 print("Extracting features (this may take a few minutes)...")
 df['use_of_ip']          = df['url'].apply(having_ip_address)
@@ -77,11 +86,13 @@ y = df['label']
 # Balance the dataset
 print("Balancing dataset...")
 from sklearn.utils import resample
-min_count = df['label'].value_counts().min()
+benign_count = len(df[df['label']==0])
+malicious_count = len(df[df['label']==1])
+# Use more samples for better learning
+sample_size = min(benign_count, malicious_count, 100000)
 df_balanced = pd.concat([
-    resample(df[df['label']==0], n_samples=min_count, random_state=42),
-    resample(df[df['label']==1], n_samples=min_count, random_state=42),
-    
+    resample(df[df['label']==0], n_samples=sample_size, random_state=42),
+    resample(df[df['label']==1], n_samples=sample_size, random_state=42),
 ])
 
 X = df_balanced[['use_of_ip','abnormal_url','count.','count-www','count@',

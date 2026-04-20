@@ -23,7 +23,8 @@ def count_dot(url):       return url.count('.')
 def count_www(url):       return url.count('www')
 def count_atrate(url):    return url.count('@')
 def count_https(url):     return url.count('https')
-def count_http(url):      return url.count('http')
+def count_http(url):
+    return url.replace('https','').count('http')
 def count_per(url):       return url.count('%')
 def count_ques(url):      return url.count('?')
 def count_hyphen(url):    return url.count('-')
@@ -73,6 +74,10 @@ def tld_length(tld):
     except: return -1
 
 def main(url):
+    # Normalize URL
+    if not url.startswith('http://') and not url.startswith('https://'):
+        url = 'https://' + url
+    
     status = []
     status.append(having_ip_address(url))
     status.append(abnormal_url(url))
@@ -96,5 +101,4 @@ def main(url):
     status.append(fd_length(url))
     tld = get_tld(url, fail_silently=True)
     status.append(tld_length(tld))
-    
     return status
