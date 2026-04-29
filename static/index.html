@@ -5,56 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ReNoteAI — URL Shield</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root[data-theme="dark"] {
       --bg: #0a0a0a; --surface: #111111; --surface2: #1a1a1a;
       --border: rgba(255,255,255,0.07); --text: #f0f0f0; --muted: #666;
       --green: #22c55e; --green-dim: #16a34a; --green-faint: rgba(34,197,94,0.07);
       --green-glow: rgba(34,197,94,0.18); --safe: #22c55e; --malicious: #ef4444;
-      --toggle-bg: #1a1a1a; --toggle-icon: '☀️';
+      --toggle-bg: #1a1a1a;
     }
     :root[data-theme="light"] {
       --bg: #f5f5f5; --surface: #ffffff; --surface2: #f0f0f0;
       --border: rgba(0,0,0,0.1); --text: #111111; --muted: #888;
       --green: #16a34a; --green-dim: #15803d; --green-faint: rgba(22,163,74,0.07);
       --green-glow: rgba(22,163,74,0.18); --safe: #16a34a; --malicious: #dc2626;
-      --toggle-bg: #e5e5e5; --toggle-icon: '🌙';
+      --toggle-bg: #e5e5e5;
     }
-
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; overflow-x: hidden; transition: background 0.3s, color 0.3s; }
     body::after { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 60px 20px 80px; }
-
-    /* Toggle */
-    .toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 100; background: var(--toggle-bg); border: 1px solid var(--border); border-radius: 50px; padding: 8px 16px; cursor: pointer; font-size: .85rem; transition: all 0.2s; color: var(--text); }
+    .toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 100; background: var(--toggle-bg); border: 1px solid var(--border); border-radius: 50px; padding: 8px 16px; cursor: pointer; font-size: .85rem; color: var(--text); transition: all 0.2s; font-family: 'Syne', sans-serif; }
     .toggle-btn:hover { border-color: var(--green); }
-
+    .logout-btn { position: fixed; top: 20px; left: 20px; z-index: 100; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 8px 16px; cursor: pointer; font-size: .85rem; color: var(--text); transition: all 0.2s; font-family: 'Syne', sans-serif; }
+    .logout-btn:hover { border-color: var(--malicious); color: var(--malicious); }
+    .user-email { position: fixed; top: 22px; left: 130px; z-index: 100; font-family: 'DM Mono',monospace; font-size: .72rem; color: var(--muted); }
     header { display: flex; align-items: center; gap: 14px; margin-bottom: 64px; animation: fadeDown 0.6s ease both; }
     .logo-ring { width: 52px; height: 52px; border: 2.5px solid var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 18px var(--green-glow); }
     .brand-name { font-size: 1.6rem; font-weight: 800; } .brand-name span { color: var(--green); }
     .brand-sub { font-size: .72rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
-
     .hero { text-align: center; max-width: 680px; margin-bottom: 48px; animation: fadeDown 0.7s 0.1s ease both; }
     .hero h1 { font-size: clamp(2rem,5vw,3.4rem); font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
     .hero h1 em { font-style: normal; color: var(--green); }
     .hero p { margin-top: 16px; font-size: 1rem; color: var(--muted); font-family: 'DM Mono',monospace; }
-
     .card { width: 100%; max-width: 680px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; box-shadow: 0 8px 48px rgba(0,0,0,0.1); animation: fadeUp 0.7s 0.2s ease both; transition: background 0.3s; }
     .input-label { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-family: 'DM Mono',monospace; }
     .input-row { display: flex; gap: 12px; }
     .url-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-family: 'DM Mono',monospace; font-size: .9rem; color: var(--text); outline: none; transition: border-color .2s,box-shadow .2s,background 0.3s; }
     .url-input::placeholder { color: var(--muted); }
     .url-input:focus { border-color: var(--green-dim); box-shadow: 0 0 0 3px var(--green-faint); }
-    .scan-btn { padding: 14px 28px; background: var(--green); color: #fff; font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: none; border-radius: 10px; cursor: pointer; transition: background .2s,transform .1s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .scan-btn { padding: 14px 28px; background: var(--green); color: #fff; font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: none; border-radius: 10px; cursor: pointer; transition: filter .2s,transform .1s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
     .scan-btn:hover { filter: brightness(1.1); }
     .scan-btn:active { transform: scale(0.97); }
     .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .clear-btn { padding: 14px 20px; background: transparent; color: var(--muted); font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .clear-btn:hover { border-color: var(--malicious); color: var(--malicious); }
     .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
     .loading .spinner { display: block; } .loading .btn-label { display: none; }
-
-    .result-area { margin-top: 24px; display: none; } .result-area.visible { display: block; animation: fadeUp 0.4s ease both; }
+    .result-area { margin-top: 24px; display: none; }
+    .result-area.visible { display: block; animation: fadeUp 0.4s ease both; }
     .result-card { border-radius: 12px; padding: 24px 28px; border: 1px solid; display: flex; align-items: center; gap: 20px; }
     .result-card.SAFE { border-color: var(--safe); background: rgba(34,197,94,0.08); }
     .result-card.MALICIOUS { border-color: var(--malicious); background: rgba(239,68,68,0.08); }
@@ -66,16 +65,15 @@
     .MALICIOUS .result-verdict { color: var(--malicious); }
     .result-url { font-family: 'DM Mono',monospace; font-size: .78rem; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
     .result-desc { font-size: .82rem; color: var(--muted); margin-top: 6px; }
-
     .error-box { margin-top: 16px; padding: 14px 18px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; font-family: 'DM Mono',monospace; font-size: .82rem; color: #f87171; display: none; }
     .error-box.visible { display: block; }
-
+    .wake-box { margin-top: 16px; padding: 14px 18px; background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.25); border-radius: 10px; font-family: 'DM Mono',monospace; font-size: .82rem; color: #fbbf24; display: none; }
+    .wake-box.visible { display: block; }
     .stats-strip { width: 100%; max-width: 680px; display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 32px; animation: fadeUp 0.7s 0.3s ease both; }
     .stat-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; transition: background 0.3s; }
     .stat-num { font-size: 1.5rem; font-weight: 800; }
     .stat-num.safe { color: var(--safe); } .stat-num.mal { color: var(--malicious); }
     .stat-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: 'DM Mono',monospace; margin-top: 3px; }
-
     .history-section { width: 100%; max-width: 680px; margin-top: 40px; }
     .section-title { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono',monospace; margin-bottom: 12px; }
     .history-list { display: flex; flex-direction: column; gap: 8px; }
@@ -85,19 +83,19 @@
     .hist-badge.SAFE { background: rgba(34,197,94,0.15); color: var(--safe); }
     .hist-badge.MALICIOUS { background: rgba(239,68,68,0.15); color: var(--malicious); }
     .hist-url { font-family: 'DM Mono',monospace; font-size: .8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
     footer { margin-top: 60px; color: var(--muted); font-size: .72rem; font-family: 'DM Mono',monospace; text-align: center; }
     footer span { color: var(--green); }
-
     @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .clear-btn { padding: 14px 20px; background: transparent; color: var(--muted); font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .2s; white-space: nowrap; }
-    .clear-btn:hover { border-color: var(--malicious); color: var(--malicious); }
+    @keyframes fadeUp   { from { opacity: 0; transform: translateY(16px);  } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin     { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-<button class="toggle-btn" onclick="toggleTheme()" id="themeBtn">☀️ Light Mode</button>
+
+<button class="logout-btn" id="logoutBtn">⏻ Logout</button>
+<span class="user-email" id="userEmail"></span>
+<button class="toggle-btn" id="themeBtn">☀️ Light Mode</button>
+
 <div class="page">
   <header>
     <div class="logo-ring">
@@ -122,12 +120,14 @@
   <div class="card">
     <div class="input-label">Enter URL to scan</div>
     <div class="input-row">
-      <input class="url-input" id="urlInput" type="text" placeholder="https://example.com/suspicious-path" autocomplete="off" spellcheck="false"/>
-      <button class="scan-btn" id="scanBtn" onclick="scanURL()">
+      <input class="url-input" id="urlInput" type="text"
+             placeholder="https://example.com/suspicious-path"
+             autocomplete="off" spellcheck="false"/>
+      <button class="scan-btn" id="scanBtn">
         <div class="spinner"></div>
         <span class="btn-label">⬡ Scan</span>
       </button>
-      <button class="clear-btn" onclick="clearURL()">✕ Clear</button>
+      <button class="clear-btn" id="clearBtn">✕ Clear</button>
     </div>
     <div class="result-area" id="resultArea">
       <div class="result-card" id="resultCard">
@@ -139,6 +139,7 @@
         </div>
       </div>
     </div>
+    <div class="wake-box" id="wakeBox">⏳ Server is waking up, this may take up to 30s. Please wait...</div>
     <div class="error-box" id="errorBox"></div>
   </div>
 
@@ -156,98 +157,174 @@
 </div>
 
 <script>
-  const API = 'https://url-shield-psms.onrender.com/classify-url/';
+  // ── Supabase ─────────────────────────────────────────────────────
+  const SUPABASE_URL = 'https://oconvumykdahxgubcisn.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jb252dW15a2RhaHhndWJjaXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNTUyMjYsImV4cCI6MjA5MjkzMTIyNn0.C6qGEZ60sYRGdvWyCa2S-iUDNEvsDODmHX-O0Nxv8PU';
+  const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  _supabase.auth.getSession().then(({ data }) => {
+    if (!data.session) {
+      window.location.href = '/login.html';
+    } else {
+      document.getElementById('userEmail').textContent = data.session.user.email;
+    }
+  });
+
+  // ── Theme ────────────────────────────────────────────────────────
+  const themeBtn = document.getElementById('themeBtn');
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  themeBtn.textContent = savedTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+
+  themeBtn.addEventListener('click', function () {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    themeBtn.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    localStorage.setItem('theme', next);
+  });
+
+  // ── Logout ───────────────────────────────────────────────────────
+  document.getElementById('logoutBtn').addEventListener('click', async function () {
+    await _supabase.auth.signOut();
+    window.location.href = '/login.html';
+  });
+
+  // ── Config ───────────────────────────────────────────────────────
+  const API = window.location.hostname === 'localhost'
+    ? 'http://localhost:5000/classify-url/'
+    : 'https://url-shield-psms.onrender.com/classify-url/';
+
+  const TIMEOUT_MS = 30000;
+  const WAKE_MS    = 8000;
+
   const descriptions = {
-    SAFE: '✔ This URL appears legitimate and safe to visit.',
+    SAFE:      '✔ This URL appears legitimate and safe to visit.',
     MALICIOUS: '✖ This URL is malicious. Do not visit!'
   };
   const icons = { SAFE: '🛡️', MALICIOUS: '☠️' };
-  let stats = { SAFE: 0, MALICIOUS: 0 };
+  let stats   = { SAFE: 0, MALICIOUS: 0 };
   let history = [];
 
-  // Theme toggle
-  function toggleTheme() {
-    const html = document.documentElement;
-    const btn = document.getElementById('themeBtn');
-    if (html.getAttribute('data-theme') === 'dark') {
-      html.setAttribute('data-theme', 'light');
-      btn.textContent = '🌙 Dark Mode';
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.setAttribute('data-theme', 'dark');
-      btn.textContent = '☀️ Light Mode';
-      localStorage.setItem('theme', 'dark');
+  // ── DOM refs ─────────────────────────────────────────────────────
+  const urlInput   = document.getElementById('urlInput');
+  const scanBtn    = document.getElementById('scanBtn');
+  const clearBtn   = document.getElementById('clearBtn');
+  const resultArea = document.getElementById('resultArea');
+  const resultCard = document.getElementById('resultCard');
+  const errorBox   = document.getElementById('errorBox');
+  const wakeBox    = document.getElementById('wakeBox');
+
+  // ── Listeners ────────────────────────────────────────────────────
+  scanBtn.addEventListener('click', scanURL);
+  clearBtn.addEventListener('click', clearURL);
+  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') scanURL(); });
+
+  // ── Validation ───────────────────────────────────────────────────
+  function validateURL(url) {
+    if (!url) return 'Please enter a URL to scan.';
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol))
+        return 'Only http:// and https:// URLs are allowed.';
+      if (!parsed.hostname.includes('.'))
+        return 'URL must have a valid domain (e.g. example.com).';
+      return null;
+    } catch {
+      return 'Invalid URL format. Use https://example.com';
     }
   }
 
-  // Load saved theme
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  document.getElementById('themeBtn').textContent = savedTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-
-  const urlInput = document.getElementById('urlInput');
-  const scanBtn = document.getElementById('scanBtn');
-  const resultArea = document.getElementById('resultArea');
-  const resultCard = document.getElementById('resultCard');
-  const errorBox = document.getElementById('errorBox');
-  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') scanURL(); });
-
+  // ── Scan ─────────────────────────────────────────────────────────
   async function scanURL() {
     const url = urlInput.value.trim();
-    if (!url) { showError('Please enter a URL to scan.'); return; }
-    hideError();
+    const err = validateURL(url);
+    if (err) { showError(err); return; }
+
+    hideError(); hideWake();
     resultArea.classList.remove('visible');
     setLoading(true);
+
+    const controller = new AbortController();
+    const timer      = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    const wakeTimer  = setTimeout(showWake, WAKE_MS);
+
     try {
-      const resp = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+      const resp = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+        signal: controller.signal
+      });
+      clearTimeout(timer); clearTimeout(wakeTimer); hideWake();
       if (!resp.ok) throw new Error('Server returned ' + resp.status);
       const data = await resp.json();
       showResult(data.url, data.classification);
       addHistory(data.url, data.classification);
       updateStats(data.classification);
-    } catch(err) {
-      showError('Cannot reach the backend. Make sure the server is running.');
-    } finally { setLoading(false); }
+    } catch (e) {
+      clearTimeout(timer); clearTimeout(wakeTimer); hideWake();
+      if (e.name === 'AbortError') {
+        showError('Request timed out after 30s. Server may be waking up — please try again.');
+      } else {
+        showError('Cannot reach the backend. Make sure the server is running.');
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
+  // ── Helpers ──────────────────────────────────────────────────────
   function showResult(url, cls) {
     resultCard.className = 'result-card ' + cls;
-    document.getElementById('resultIcon').textContent = icons[cls] || '❓';
+    document.getElementById('resultIcon').textContent    = icons[cls] || '❓';
     document.getElementById('resultVerdict').textContent = cls;
-    document.getElementById('resultUrl').textContent = url;
-    document.getElementById('resultDesc').textContent = descriptions[cls] || 'Unknown.';
+    document.getElementById('resultUrl').textContent     = url;
+    document.getElementById('resultDesc').textContent    = descriptions[cls] || 'Unknown.';
     resultArea.classList.add('visible');
   }
 
   function addHistory(url, cls) {
     history.unshift({ url, cls });
     if (history.length > 8) history.pop();
-    const section = document.getElementById('historySection');
+    document.getElementById('historySection').style.display = 'block';
     const list = document.getElementById('historyList');
-    section.style.display = 'block';
-    list.innerHTML = history.map(h => `<div class="history-item" onclick="reScan(this.dataset.url)" data-url="${h.url.replace(/"/g,'&quot;')}"><span class="hist-badge ${h.cls}">${h.cls}</span><span class="hist-url">${h.url}</span></div>`).join('');
+    list.innerHTML = '';
+    history.forEach(h => {
+      const item    = document.createElement('div');
+      item.className = 'history-item';
+      item.addEventListener('click', () => { urlInput.value = h.url; scanURL(); });
+      const badge   = document.createElement('span');
+      badge.className = 'hist-badge ' + h.cls;
+      badge.textContent = h.cls;
+      const urlSpan = document.createElement('span');
+      urlSpan.className = 'hist-url';
+      urlSpan.textContent = h.url;
+      item.appendChild(badge);
+      item.appendChild(urlSpan);
+      list.appendChild(item);
+    });
   }
 
-  function reScan(url) { urlInput.value = url; scanURL(); }
-
   function updateStats(cls) {
-    if (stats.hasOwnProperty(cls)) {
+    if (cls in stats) {
       stats[cls]++;
       document.getElementById('statSafe').textContent = stats.SAFE;
-      document.getElementById('statMal').textContent = stats.MALICIOUS;
+      document.getElementById('statMal').textContent  = stats.MALICIOUS;
     }
   }
 
   function setLoading(on) { scanBtn.disabled = on; scanBtn.classList.toggle('loading', on); }
   function showError(msg) { errorBox.textContent = msg; errorBox.classList.add('visible'); }
-  function hideError() { errorBox.classList.remove('visible'); }
+  function hideError()    { errorBox.classList.remove('visible'); }
+  function showWake()     { wakeBox.classList.add('visible'); }
+  function hideWake()     { wakeBox.classList.remove('visible'); }
 
   function clearURL() {
     urlInput.value = '';
     resultArea.classList.remove('visible');
-    hideError();
+    hideError(); hideWake();
     urlInput.focus();
-}
+  }
 </script>
 </body>
 </html>

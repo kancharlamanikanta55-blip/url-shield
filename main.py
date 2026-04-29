@@ -36,13 +36,17 @@ class URLData(BaseModel):
 async def root():
     return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
+@app.get("/static/login.html")
+async def login():
+    return FileResponse("static/login.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+    
 SAFE_DOMAINS = {
     'google.com', 'youtube.com', 'microsoft.com', 'apple.com',
     'amazon.com', 'facebook.com', 'twitter.com', 'instagram.com',
     'linkedin.com', 'github.com', 'wikipedia.org', 'netflix.com',
     'reddit.com', 'yahoo.com', 'bing.com', 'stackoverflow.com',
     'whatsapp.com', 'zoom.us', 'dropbox.com', 'spotify.com',
-    'onrender.com', 'url-shield-psms.onrender.com'
+    'onrender.com','render.com', 'url-shield-psms.onrender.com'
 }
 
 @app.post("/classify-url/")
