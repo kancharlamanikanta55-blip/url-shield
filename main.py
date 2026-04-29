@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import numpy as np
 import joblib
 import os
@@ -27,37 +27,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
 class URLData(BaseModel):
     url: str
 
+# ── Page routes ──────────────────────────────────────────────────────
 @app.get("/")
 async def root():
     return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
-@app.get("/static/login.html")
+@app.get("/login")
 async def login_page():
     return FileResponse("static/login.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
-@app.get("/static/index.html")
+@app.get("/index")
 async def index_page():
     return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
+# ── API ──────────────────────────────────────────────────────────────
 SAFE_DOMAINS = {
     'google.com', 'youtube.com', 'microsoft.com', 'apple.com',
     'amazon.com', 'facebook.com', 'twitter.com', 'instagram.com',
     'linkedin.com', 'github.com', 'wikipedia.org', 'netflix.com',
     'reddit.com', 'yahoo.com', 'bing.com', 'stackoverflow.com',
     'whatsapp.com', 'zoom.us', 'dropbox.com', 'spotify.com',
-    'onrender.com','render.com', 'url-shield-psms.onrender.com'
+    'onrender.com', 'render.com', 'url-shield-psms.onrender.com'
 }
 
 @app.post("/classify-url/")
 async def classify_url(url_data: URLData):
-    # Check against known safe domains
     from urllib.parse import urlparse
     try:
         hostname = urlparse(url_data.url).hostname or ''
@@ -76,6 +73,9 @@ async def classify_url(url_data: URLData):
     categories = {0: "SAFE", 1: "MALICIOUS"}
     result = categories.get(int(prediction[0]), "Unknown")
     return {"url": url_data.url, "classification": result}
+
+# ── Static files (mounted LAST) ──────────────────────────────────────
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
     import uvicorn

@@ -164,7 +164,7 @@
 
   _supabase.auth.getSession().then(({ data }) => {
     if (!data.session) {
-      window.location.href = '/login.html';
+      window.location.href = '/login';
     } else {
       document.getElementById('userEmail').textContent = data.session.user.email;
     }
@@ -186,7 +186,7 @@
   // ── Logout ───────────────────────────────────────────────────────
   document.getElementById('logoutBtn').addEventListener('click', async function () {
     await _supabase.auth.signOut();
-    window.location.href = '/login.html';
+    window.location.href = '/login';
   });
 
   // ── Config ───────────────────────────────────────────────────────
