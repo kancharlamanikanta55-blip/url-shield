@@ -27,7 +27,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 class URLData(BaseModel):
     url: str
@@ -37,9 +37,15 @@ async def root():
     return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 @app.get("/static/login.html")
-async def login():
+async def login_page():
     return FileResponse("static/login.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
-    
+
+@app.get("/static/index.html")
+async def index_page():
+    return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 SAFE_DOMAINS = {
     'google.com', 'youtube.com', 'microsoft.com', 'apple.com',
     'amazon.com', 'facebook.com', 'twitter.com', 'instagram.com',
