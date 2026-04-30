@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ReNoteAI — URL Shield Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-  <!-- Supabase MUST load before any script that uses it -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root[data-theme="dark"] {
       --bg: #0a0a0a; --surface: #111111; --surface2: #1a1a1a;
       --border: rgba(255,255,255,0.07); --text: #f0f0f0; --muted: #666;
@@ -22,110 +20,43 @@
       --green: #16a34a; --green-dim: #15803d; --green-faint: rgba(22,163,74,0.07);
       --green-glow: rgba(22,163,74,0.18); --red: #dc2626;
     }
-
-    html, body {
-      height: 100%; background: var(--bg); color: var(--text);
-      font-family: 'Syne', sans-serif; transition: background 0.3s, color 0.3s;
-    }
-    body::after {
-      content: ''; position: fixed; inset: 0;
-      background-image: linear-gradient(var(--border) 1px,transparent 1px),
-                        linear-gradient(90deg,var(--border) 1px,transparent 1px);
-      background-size: 60px 60px; pointer-events: none; z-index: 0;
-    }
-
-    .toggle-btn {
-      position: fixed; top: 20px; right: 20px; z-index: 100;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 50px; padding: 8px 16px; cursor: pointer;
-      font-size: .85rem; color: var(--text); transition: all 0.2s;
-    }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; transition: background 0.3s, color 0.3s; }
+    body::after { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
+    .toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 100; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 8px 16px; cursor: pointer; font-size: .85rem; color: var(--text); transition: all 0.2s; font-family: 'Syne', sans-serif; }
     .toggle-btn:hover { border-color: var(--green); }
-
-    .page {
-      position: relative; z-index: 1; min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 40px 20px;
-    }
-
+    .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
     .logo-wrap { display: flex; align-items: center; gap: 14px; margin-bottom: 40px; }
-    .logo-ring {
-      width: 52px; height: 52px; border: 2.5px solid var(--green); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 18px var(--green-glow);
-    }
-    .brand-name { font-size: 1.6rem; font-weight: 800; }
-    .brand-name span { color: var(--green); }
+    .logo-ring { width: 52px; height: 52px; border: 2.5px solid var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 18px var(--green-glow); }
+    .brand-name { font-size: 1.6rem; font-weight: 800; } .brand-name span { color: var(--green); }
     .brand-sub { font-size: .72rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; margin-top: 3px; }
-
-    .card {
-      width: 100%; max-width: 420px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 16px; padding: 36px;
-      box-shadow: 0 8px 48px rgba(0,0,0,0.2);
-    }
+    .card { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; box-shadow: 0 8px 48px rgba(0,0,0,0.2); }
     .card-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
     .card-sub { font-size: .82rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 28px; }
-
-    .tabs {
-      display: flex; margin-bottom: 24px; background: var(--surface2);
-      border-radius: 10px; padding: 4px;
-    }
-    .tab {
-      flex: 1; padding: 10px; text-align: center; font-size: .85rem;
-      font-weight: 700; cursor: pointer; border-radius: 8px;
-      transition: all .2s; color: var(--muted); border: none;
-      background: transparent; font-family: 'Syne', sans-serif;
-    }
+    .tabs { display: flex; margin-bottom: 24px; background: var(--surface2); border-radius: 10px; padding: 4px; }
+    .tab { flex: 1; padding: 10px; text-align: center; font-size: .85rem; font-weight: 700; cursor: pointer; border-radius: 8px; transition: all .2s; color: var(--muted); border: none; background: transparent; font-family: 'Syne', sans-serif; }
     .tab.active { background: var(--green); color: #fff; }
-
     .form-group { margin-bottom: 16px; }
-    .form-label {
-      font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
-      color: var(--muted); font-family: 'DM Mono', monospace;
-      margin-bottom: 8px; display: block;
-    }
-    .form-input {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px 16px; font-family: 'DM Mono', monospace;
-      font-size: .9rem; color: var(--text); outline: none;
-      transition: border-color .2s, box-shadow .2s;
-    }
-    .form-input:focus { border-color: var(--green-dim); box-shadow: 0 0 0 3px var(--green-faint); }
+    .form-label { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 8px; display: block; }
 
-    .submit-btn {
-      width: 100%; padding: 14px; background: var(--green); color: #fff;
-      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem;
-      border: none; border-radius: 10px; cursor: pointer;
-      transition: filter .2s; margin-top: 8px;
-    }
+    /* Password field with eye icon */
+    .input-wrap { position: relative; }
+    .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 44px 14px 16px; font-family: 'DM Mono', monospace; font-size: .9rem; color: var(--text); outline: none; transition: border-color .2s, box-shadow .2s; }
+    .form-input:focus { border-color: var(--green-dim); box-shadow: 0 0 0 3px var(--green-faint); }
+    .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; display: flex; align-items: center; transition: color .2s; }
+    .eye-btn:hover { color: var(--text); }
+
+    .submit-btn { width: 100%; padding: 14px; background: var(--green); color: #fff; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; border: none; border-radius: 10px; cursor: pointer; transition: filter .2s; margin-top: 8px; }
     .submit-btn:hover { filter: brightness(1.1); }
     .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); }
-
-    .msg {
-      margin-top: 16px; padding: 12px 16px; border-radius: 10px;
-      font-family: 'DM Mono', monospace; font-size: .82rem; display: none;
-    }
-    .msg.success {
-      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
-      color: var(--green); display: block;
-    }
-    .msg.error {
-      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
-      color: var(--red); display: block;
-    }
-
-    footer {
-      margin-top: 40px; color: var(--muted); font-size: .72rem;
-      font-family: 'DM Mono', monospace; text-align: center;
-      position: relative; z-index: 1;
-    }
+    .msg { margin-top: 16px; padding: 12px 16px; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: .82rem; display: none; }
+    .msg.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: var(--green); display: block; }
+    .msg.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: var(--red); display: block; }
+    footer { margin-top: 40px; color: var(--muted); font-size: .72rem; font-family: 'DM Mono', monospace; text-align: center; position: relative; z-index: 1; }
     footer span { color: var(--green); }
   </style>
 </head>
 <body>
-
 <button class="toggle-btn" id="themeBtn">☀️ Light Mode</button>
-
 <div class="page">
   <div class="logo-wrap">
     <div class="logo-ring">
@@ -145,7 +76,6 @@
   <div class="card">
     <div class="card-title" id="cardTitle">Welcome back</div>
     <div class="card-sub">// sign in to your secure portal</div>
-
     <div class="tabs">
       <button class="tab active" id="loginTab">Sign In</button>
       <button class="tab" id="signupTab">Sign Up</button>
@@ -155,11 +85,18 @@
     <div id="loginForm">
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input class="form-input" id="loginEmail" type="email" placeholder="you@example.com"/>
+        <div class="input-wrap">
+          <input class="form-input" id="loginEmail" type="email" placeholder="you@example.com"/>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input class="form-input" id="loginPassword" type="password" placeholder="••••••••"/>
+        <div class="input-wrap">
+          <input class="form-input" id="loginPassword" type="password" placeholder="••••••••"/>
+          <button class="eye-btn" type="button" onclick="toggleEye('loginPassword', this)">
+            <svg id="eyeIcon1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </div>
       <button class="submit-btn" id="signInBtn">Sign In →</button>
     </div>
@@ -168,74 +105,84 @@
     <div id="signupForm" style="display:none;">
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input class="form-input" id="signupEmail" type="email" placeholder="you@example.com"/>
+        <div class="input-wrap">
+          <input class="form-input" id="signupEmail" type="email" placeholder="you@example.com"/>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input class="form-input" id="signupPassword" type="password" placeholder="min. 6 characters"/>
+        <div class="input-wrap">
+          <input class="form-input" id="signupPassword" type="password" placeholder="min. 6 characters"/>
+          <button class="eye-btn" type="button" onclick="toggleEye('signupPassword', this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Confirm Password</label>
-        <input class="form-input" id="signupConfirm" type="password" placeholder="••••••••"/>
+        <div class="input-wrap">
+          <input class="form-input" id="signupConfirm" type="password" placeholder="••••••••"/>
+          <button class="eye-btn" type="button" onclick="toggleEye('signupConfirm', this)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </div>
       <button class="submit-btn" id="signUpBtn">Create Account →</button>
     </div>
-
     <div class="msg" id="msg"></div>
   </div>
-
   <footer>ReNoteAI &nbsp;·&nbsp; URL Shield &nbsp;·&nbsp; <span>url-shield-psms.onrender.com</span></footer>
 </div>
 
 <script>
-  // ── Supabase ─────────────────────────────────────────────────────
   const SUPABASE_URL = 'https://oconvumykdahxgubcisn.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9jb252dW15a2RhaHhndWJjaXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNTUyMjYsImV4cCI6MjA5MjkzMTIyNn0.C6qGEZ60sYRGdvWyCa2S-iUDNEvsDODmHX-O0Nxv8PU';
   const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // If already logged in, skip login page
   _supabase.auth.getSession().then(({ data }) => {
     if (data.session) window.location.href = '/';
   });
 
-  // ── Theme ────────────────────────────────────────────────────────
+  // Theme
   const themeBtn = document.getElementById('themeBtn');
   const savedTheme = localStorage.getItem('theme') || 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
   themeBtn.textContent = savedTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-
-  themeBtn.addEventListener('click', function () {
-    const html = document.documentElement;
-    const isDark = html.getAttribute('data-theme') === 'dark';
-    const next = isDark ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
+  themeBtn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
     themeBtn.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
     localStorage.setItem('theme', next);
   });
 
-  // ── Tabs ─────────────────────────────────────────────────────────
-  const loginTab  = document.getElementById('loginTab');
-  const signupTab = document.getElementById('signupTab');
+  // Eye toggle
+  function toggleEye(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const show  = input.type === 'password';
+    input.type  = show ? 'text' : 'password';
+    btn.innerHTML = show
+      ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+      : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  }
 
-  loginTab.addEventListener('click', () => switchTab('login'));
-  signupTab.addEventListener('click', () => switchTab('signup'));
-
+  // Tabs
+  document.getElementById('loginTab').addEventListener('click',  () => switchTab('login'));
+  document.getElementById('signupTab').addEventListener('click', () => switchTab('signup'));
   function switchTab(tab) {
     document.getElementById('loginForm').style.display  = tab === 'login'  ? 'block' : 'none';
     document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
-    loginTab.classList.toggle('active', tab === 'login');
-    signupTab.classList.toggle('active', tab === 'signup');
+    document.getElementById('loginTab').classList.toggle('active',  tab === 'login');
+    document.getElementById('signupTab').classList.toggle('active', tab === 'signup');
     document.getElementById('cardTitle').textContent = tab === 'login' ? 'Welcome back' : 'Get Started';
     hideMsg();
   }
 
-  // ── Enter key support ────────────────────────────────────────────
-  document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
-  document.getElementById('signupConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') signUp(); });
+  // Enter key
+  document.getElementById('loginPassword').addEventListener('keydown',  e => { if (e.key === 'Enter') signIn(); });
+  document.getElementById('signupConfirm').addEventListener('keydown',  e => { if (e.key === 'Enter') signUp(); });
 
-  // ── Sign In ──────────────────────────────────────────────────────
+  // Sign In
   document.getElementById('signInBtn').addEventListener('click', signIn);
-
   async function signIn() {
     const email    = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
@@ -243,18 +190,12 @@
     if (!email || !password) { showMsg('Please fill in all fields.', 'error'); return; }
     setLoading(btn, true);
     const { error } = await _supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      showMsg(error.message, 'error');
-      setLoading(btn, false);
-    } else {
-      showMsg('Authenticating...', 'success');
-      window.location.href = '/';
-    }
+    if (error) { showMsg(error.message, 'error'); setLoading(btn, false); }
+    else { showMsg('Authenticating...', 'success'); window.location.href = '/'; }
   }
 
-  // ── Sign Up ──────────────────────────────────────────────────────
+  // Sign Up
   document.getElementById('signUpBtn').addEventListener('click', signUp);
-
   async function signUp() {
     const email    = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
@@ -265,21 +206,11 @@
     if (password.length < 6)   { showMsg('Password must be at least 6 characters.', 'error'); return; }
     setLoading(btn, true);
     const { error } = await _supabase.auth.signUp({ email, password });
-    if (error) {
-      showMsg(error.message, 'error');
-      setLoading(btn, false);
-    } else {
-      showMsg('Success! Check your email to confirm your account.', 'success');
-      btn.textContent = 'Check Email ✓';
-    }
+    if (error) { showMsg(error.message, 'error'); setLoading(btn, false); }
+    else { showMsg('Success! Check your email to confirm your account.', 'success'); btn.textContent = 'Check Email ✓'; }
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────
-  function showMsg(text, type) {
-    const el = document.getElementById('msg');
-    el.textContent = text;
-    el.className = 'msg ' + type;
-  }
+  function showMsg(text, type) { const el = document.getElementById('msg'); el.textContent = text; el.className = 'msg ' + type; }
   function hideMsg() { document.getElementById('msg').className = 'msg'; }
   function setLoading(btn, on) {
     btn.disabled = on;

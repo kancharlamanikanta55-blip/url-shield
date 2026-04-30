@@ -6,6 +6,8 @@
   <title>ReNoteAI — URL Shield</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- jsPDF for client-side PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root[data-theme="dark"] {
@@ -26,54 +28,27 @@
     body::after { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px); background-size: 60px 60px; pointer-events: none; z-index: 0; }
     .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 60px 20px 80px; }
 
-    /* ── Theme toggle ── */
-    .toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 100; background: var(--toggle-bg); border: 1px solid var(--border); border-radius: 50px; padding: 8px 16px; cursor: pointer; font-size: .85rem; color: var(--text); transition: all 0.2s; font-family: 'Syne', sans-serif; }
-    .toggle-btn:hover { border-color: var(--green); }
-
     /* ── Profile dropdown ── */
     .profile-wrap { position: fixed; top: 20px; left: 20px; z-index: 200; }
-    .profile-trigger {
-      display: flex; align-items: center; gap: 10px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 50px; padding: 7px 14px 7px 8px;
-      cursor: pointer; transition: border-color .2s;
-      font-family: 'Syne', sans-serif; font-size: .85rem; color: var(--text);
-    }
+    .profile-trigger { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; padding: 7px 14px 7px 8px; cursor: pointer; transition: border-color .2s; font-family: 'Syne', sans-serif; font-size: .85rem; color: var(--text); }
     .profile-trigger:hover { border-color: var(--green); }
-    .profile-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: var(--green); display: flex; align-items: center;
-      justify-content: center; font-size: .75rem; font-weight: 800;
-      color: #fff; flex-shrink: 0; text-transform: uppercase;
-    }
-    .profile-email-short { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--muted); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .profile-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 800; color: #fff; flex-shrink: 0; text-transform: uppercase; }
+    .profile-name { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .profile-chevron { font-size: .65rem; color: var(--muted); transition: transform .2s; }
     .profile-wrap.open .profile-chevron { transform: rotate(180deg); }
-
-    .profile-dropdown {
-      position: absolute; top: calc(100% + 8px); left: 0;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 8px; min-width: 220px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-      display: none; animation: fadeUp .2s ease both;
-    }
-    .profile-wrap.open .profile-dropdown { display: block; }
-    .dropdown-email {
-      padding: 10px 12px 12px; border-bottom: 1px solid var(--border);
-      margin-bottom: 6px;
-    }
+    .profile-dropdown { position: absolute; top: calc(100% + 8px); left: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px; min-width: 220px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); display: none; }
+    .profile-wrap.open .profile-dropdown { display: block; animation: fadeUp .2s ease both; }
+    .dropdown-email { padding: 10px 12px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
     .dropdown-email-label { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 4px; }
     .dropdown-email-val { font-family: 'DM Mono', monospace; font-size: .8rem; color: var(--text); word-break: break-all; }
-    .dropdown-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: 8px; cursor: pointer;
-      font-size: .85rem; font-weight: 600; transition: background .15s;
-      color: var(--text); border: none; background: none;
-      width: 100%; text-align: left; font-family: 'Syne', sans-serif;
-    }
+    .dropdown-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: .85rem; font-weight: 600; transition: background .15s; color: var(--text); border: none; background: none; width: 100%; text-align: left; font-family: 'Syne', sans-serif; }
     .dropdown-item:hover { background: var(--surface2); }
     .dropdown-item.danger { color: var(--malicious); }
     .dropdown-item.danger:hover { background: rgba(239,68,68,0.08); }
+
+    /* ── Theme toggle ── */
+    .toggle-btn { position: fixed; top: 20px; right: 20px; z-index: 100; background: var(--toggle-bg); border: 1px solid var(--border); border-radius: 50px; padding: 8px 16px; cursor: pointer; font-size: .85rem; color: var(--text); transition: all 0.2s; font-family: 'Syne', sans-serif; }
+    .toggle-btn:hover { border-color: var(--green); }
 
     header { display: flex; align-items: center; gap: 14px; margin-bottom: 64px; animation: fadeDown 0.6s ease both; }
     .logo-ring { width: 52px; height: 52px; border: 2.5px solid var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 18px var(--green-glow); }
@@ -83,46 +58,54 @@
     .hero h1 { font-size: clamp(2rem,5vw,3.4rem); font-weight: 800; line-height: 1.1; letter-spacing: -1px; }
     .hero h1 em { font-style: normal; color: var(--green); }
     .hero p { margin-top: 16px; font-size: 1rem; color: var(--muted); font-family: 'DM Mono',monospace; }
+
     .card { width: 100%; max-width: 680px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; box-shadow: 0 8px 48px rgba(0,0,0,0.1); animation: fadeUp 0.7s 0.2s ease both; transition: background 0.3s; }
     .input-label { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-family: 'DM Mono',monospace; }
-    .input-row { display: flex; gap: 12px; }
-    .url-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-family: 'DM Mono',monospace; font-size: .9rem; color: var(--text); outline: none; transition: border-color .2s,box-shadow .2s,background 0.3s; }
-    .url-input::placeholder { color: var(--muted); }
-    .url-input:focus { border-color: var(--green-dim); box-shadow: 0 0 0 3px var(--green-faint); }
-    .scan-btn { padding: 14px 28px; background: var(--green); color: #fff; font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: none; border-radius: 10px; cursor: pointer; transition: filter .2s,transform .1s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+
+    /* ── Multi URL textarea ── */
+    .url-textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-family: 'DM Mono',monospace; font-size: .9rem; color: var(--text); outline: none; resize: vertical; min-height: 80px; transition: border-color .2s,box-shadow .2s,background 0.3s; }
+    .url-textarea::placeholder { color: var(--muted); }
+    .url-textarea:focus { border-color: var(--green-dim); box-shadow: 0 0 0 3px var(--green-faint); }
+    .url-hint { font-size: .7rem; color: var(--muted); font-family: 'DM Mono',monospace; margin-top: 6px; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .scan-btn { padding: 12px 24px; background: var(--green); color: #fff; font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: none; border-radius: 10px; cursor: pointer; transition: filter .2s,transform .1s; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
     .scan-btn:hover { filter: brightness(1.1); }
     .scan-btn:active { transform: scale(0.97); }
     .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .clear-btn { padding: 14px 20px; background: transparent; color: var(--muted); font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .clear-btn { padding: 12px 18px; background: transparent; color: var(--muted); font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .2s; white-space: nowrap; }
     .clear-btn:hover { border-color: var(--malicious); color: var(--malicious); }
+    .pdf-btn { padding: 12px 18px; background: transparent; color: var(--muted); font-family: 'Syne',sans-serif; font-weight: 700; font-size: .9rem; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all .2s; white-space: nowrap; display: none; }
+    .pdf-btn:hover { border-color: var(--green); color: var(--green); }
+    .pdf-btn.visible { display: block; }
+
     .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
     .loading .spinner { display: block; } .loading .btn-label { display: none; }
-    .result-area { margin-top: 24px; display: none; }
-    .result-area.visible { display: block; animation: fadeUp 0.4s ease both; }
-    .result-card { border-radius: 12px; padding: 24px 28px; border: 1px solid; display: flex; align-items: center; gap: 20px; }
+
+    /* ── Multi result list ── */
+    .results-list { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .result-card { border-radius: 12px; padding: 16px 20px; border: 1px solid; display: flex; align-items: center; gap: 16px; animation: fadeUp 0.3s ease both; }
     .result-card.SAFE { border-color: var(--safe); background: rgba(34,197,94,0.08); }
     .result-card.MALICIOUS { border-color: var(--malicious); background: rgba(239,68,68,0.08); }
-    .result-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
-    .SAFE .result-icon { background: rgba(34,197,94,0.15); }
-    .MALICIOUS .result-icon { background: rgba(239,68,68,0.15); }
-    .result-verdict { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+    .result-icon { font-size: 1.4rem; flex-shrink: 0; }
+    .result-verdict { font-size: 1rem; font-weight: 800; }
     .SAFE .result-verdict { color: var(--safe); }
     .MALICIOUS .result-verdict { color: var(--malicious); }
-    .result-url { font-family: 'DM Mono',monospace; font-size: .78rem; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
-    .result-desc { font-size: .82rem; color: var(--muted); margin-top: 6px; }
+    .result-url { font-family: 'DM Mono',monospace; font-size: .75rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 460px; }
+
     .error-box { margin-top: 16px; padding: 14px 18px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); border-radius: 10px; font-family: 'DM Mono',monospace; font-size: .82rem; color: #f87171; display: none; }
     .error-box.visible { display: block; }
     .wake-box { margin-top: 16px; padding: 14px 18px; background: rgba(234,179,8,0.08); border: 1px solid rgba(234,179,8,0.25); border-radius: 10px; font-family: 'DM Mono',monospace; font-size: .82rem; color: #fbbf24; display: none; }
     .wake-box.visible { display: block; }
-
-    /* ── History hint ── */
-    .hist-hint { font-size: .68rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 6px; opacity: 0.7; }
+    .progress-box { margin-top: 14px; font-family: 'DM Mono',monospace; font-size: .8rem; color: var(--muted); display: none; }
+    .progress-box.visible { display: block; }
 
     .stats-strip { width: 100%; max-width: 680px; display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 32px; animation: fadeUp 0.7s 0.3s ease both; }
     .stat-cell { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; transition: background 0.3s; }
     .stat-num { font-size: 1.5rem; font-weight: 800; }
     .stat-num.safe { color: var(--safe); } .stat-num.mal { color: var(--malicious); }
     .stat-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: 'DM Mono',monospace; margin-top: 3px; }
+
     .history-section { width: 100%; max-width: 680px; margin-top: 40px; }
     .section-title { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono',monospace; margin-bottom: 12px; }
     .history-list { display: flex; flex-direction: column; gap: 8px; }
@@ -132,6 +115,7 @@
     .hist-badge.SAFE { background: rgba(34,197,94,0.15); color: var(--safe); }
     .hist-badge.MALICIOUS { background: rgba(239,68,68,0.15); color: var(--malicious); }
     .hist-url { font-family: 'DM Mono',monospace; font-size: .8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
     footer { margin-top: 60px; color: var(--muted); font-size: .72rem; font-family: 'DM Mono',monospace; text-align: center; }
     footer span { color: var(--green); }
     @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
@@ -141,10 +125,11 @@
 </head>
 <body>
 
+<!-- Profile -->
 <div class="profile-wrap" id="profileWrap">
   <div class="profile-trigger" id="profileTrigger">
     <div class="profile-avatar" id="profileAvatar">?</div>
-    <span class="profile-email-short" id="profileEmailShort">loading…</span>
+    <span class="profile-name" id="profileName">loading…</span>
     <span class="profile-chevron">▼</span>
   </div>
   <div class="profile-dropdown">
@@ -180,34 +165,30 @@
   </div>
 
   <div class="card">
-    <div class="input-label">Enter URL to scan</div>
-    <div class="input-row">
-      <input class="url-input" id="urlInput" type="text"
-             placeholder="https://example.com/suspicious-path"
-             autocomplete="off" spellcheck="false"/>
+    <div class="input-label">Enter URL(s) to scan</div>
+    <textarea class="url-textarea" id="urlInput"
+      placeholder="https://example.com&#10;https://another-site.com&#10;https://suspicious.xyz"
+      autocomplete="off" spellcheck="false"></textarea>
+    <div class="url-hint">// one URL per line — scan up to 10 at once</div>
+
+    <div class="btn-row">
       <button class="scan-btn" id="scanBtn">
         <div class="spinner"></div>
         <span class="btn-label">⬡ Scan</span>
       </button>
       <button class="clear-btn" id="clearBtn">✕ Clear</button>
+      <button class="pdf-btn" id="pdfBtn">⬇ Download PDF</button>
     </div>
-    <div class="result-area" id="resultArea">
-      <div class="result-card" id="resultCard">
-        <div class="result-icon" id="resultIcon"></div>
-        <div class="result-body">
-          <div class="result-verdict" id="resultVerdict"></div>
-          <div class="result-url" id="resultUrl"></div>
-          <div class="result-desc" id="resultDesc"></div>
-        </div>
-      </div>
-    </div>
-    <div class="wake-box" id="wakeBox">⏳ Server is waking up, this may take up to 30s. Please wait...</div>
+
+    <div class="progress-box" id="progressBox"></div>
+    <div class="wake-box"  id="wakeBox">⏳ Server is waking up, this may take up to 30s…</div>
     <div class="error-box" id="errorBox"></div>
+    <div class="results-list" id="resultsList"></div>
   </div>
 
   <div class="stats-strip">
     <div class="stat-cell"><div class="stat-num safe" id="statSafe">0</div><div class="stat-label">Safe</div></div>
-    <div class="stat-cell"><div class="stat-num mal" id="statMal">0</div><div class="stat-label">Malicious</div></div>
+    <div class="stat-cell"><div class="stat-num mal"  id="statMal">0</div><div class="stat-label">Malicious</div></div>
   </div>
 
   <div class="history-section" id="historySection" style="display:none;">
@@ -225,26 +206,25 @@
   const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let currentUserId = null;
+  let currentUserEmail = '';
+  let lastResults = []; // for PDF
 
-  // ── Auth + boot ──────────────────────────────────────────────────
+  // ── Auth ─────────────────────────────────────────────────────────
   _supabase.auth.getSession().then(({ data }) => {
-    if (!data.session) {
-      window.location.href = '/login';
-      return;
-    }
-    const user  = data.session.user;
-    currentUserId = user.id;
-    const email = user.email;
-
-    document.getElementById('profileAvatar').textContent     = email.charAt(0);
-    document.getElementById('profileEmailShort').textContent = email;
-    document.getElementById('dropdownEmail').textContent      = email;
-
+    if (!data.session) { window.location.href = '/login'; return; }
+    const user = data.session.user;
+    currentUserId    = user.id;
+    currentUserEmail = user.email;
+    // Show only name part (before @)
+    const name = user.email.split('@')[0];
+    document.getElementById('profileAvatar').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('profileName').textContent   = name;
+    document.getElementById('dropdownEmail').textContent = user.email;
     loadHistory();
     loadStats();
   });
 
-  // ── Profile dropdown toggle ───────────────────────────────────────
+  // ── Profile dropdown ─────────────────────────────────────────────
   const profileWrap = document.getElementById('profileWrap');
   document.getElementById('profileTrigger').addEventListener('click', e => {
     e.stopPropagation();
@@ -277,33 +257,212 @@
 
   const TIMEOUT_MS = 30000;
   const WAKE_MS    = 8000;
-  const descriptions = { SAFE: '✔ This URL appears legitimate and safe to visit.', MALICIOUS: '✖ This URL is malicious. Do not visit!' };
+  const descriptions = { SAFE: '✔ Legitimate and safe to visit.', MALICIOUS: '✖ Malicious — do not visit!' };
   const icons = { SAFE: '🛡️', MALICIOUS: '☠️' };
-  let stats   = { SAFE: 0, MALICIOUS: 0 };
+  let stats = { SAFE: 0, MALICIOUS: 0 };
   let history = [];
 
   // ── DOM refs ─────────────────────────────────────────────────────
-  const urlInput   = document.getElementById('urlInput');
-  const scanBtn    = document.getElementById('scanBtn');
-  const clearBtn   = document.getElementById('clearBtn');
-  const resultArea = document.getElementById('resultArea');
-  const resultCard = document.getElementById('resultCard');
-  const errorBox   = document.getElementById('errorBox');
-  const wakeBox    = document.getElementById('wakeBox');
+  const urlInput    = document.getElementById('urlInput');
+  const scanBtn     = document.getElementById('scanBtn');
+  const clearBtn    = document.getElementById('clearBtn');
+  const pdfBtn      = document.getElementById('pdfBtn');
+  const errorBox    = document.getElementById('errorBox');
+  const wakeBox     = document.getElementById('wakeBox');
+  const progressBox = document.getElementById('progressBox');
+  const resultsList = document.getElementById('resultsList');
 
-  scanBtn.addEventListener('click', scanURL);
-  clearBtn.addEventListener('click', clearURL);
-  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') scanURL(); });
+  scanBtn.addEventListener('click', scanURLs);
+  clearBtn.addEventListener('click', clearAll);
+  pdfBtn.addEventListener('click', downloadPDF);
+  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter' && e.ctrlKey) scanURLs(); });
 
-  // ── Load history from Supabase ────────────────────────────────────
+  // ── Validation ───────────────────────────────────────────────────
+  function validateURL(url) {
+    if (!url) return 'Empty URL.';
+    try {
+      const p = new URL(url);
+      if (!['http:', 'https:'].includes(p.protocol)) return 'Only http/https allowed.';
+      if (!p.hostname.includes('.')) return 'Invalid domain.';
+      return null;
+    } catch { return 'Invalid URL format.'; }
+  }
+
+  // ── Scan multiple URLs ────────────────────────────────────────────
+  async function scanURLs() {
+    const raw  = urlInput.value.trim();
+    if (!raw) { showError('Please enter at least one URL.'); return; }
+
+    const urls = [...new Set(
+      raw.split('\n').map(u => u.trim()).filter(u => u.length > 0)
+    )].slice(0, 10); // max 10
+
+    if (urls.length === 0) { showError('No valid URLs found.'); return; }
+
+    hideError(); hideWake();
+    resultsList.innerHTML = '';
+    lastResults = [];
+    pdfBtn.classList.remove('visible');
+    setLoading(true);
+
+    const controller = new AbortController();
+    const wakeTimer  = setTimeout(showWake, WAKE_MS);
+    let completed    = 0;
+
+    showProgress(`Scanning 0 / ${urls.length}…`);
+
+    for (const url of urls) {
+      const validErr = validateURL(url);
+      if (validErr) {
+        appendResult(url, 'ERROR', validErr);
+        completed++;
+        showProgress(`Scanning ${completed} / ${urls.length}…`);
+        continue;
+      }
+
+      const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      try {
+        const resp = await fetch(API, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ url }),
+          signal:  controller.signal
+        });
+        clearTimeout(timer);
+        if (!resp.ok) throw new Error('Server ' + resp.status);
+        const data = await resp.json();
+        appendResult(data.url, data.classification);
+        lastResults.push({ url: data.url, classification: data.classification });
+        await saveScan(data.url, data.classification);
+      } catch (e) {
+        clearTimeout(timer);
+        appendResult(url, 'ERROR', e.name === 'AbortError' ? 'Timed out' : 'Failed to reach server');
+      }
+      completed++;
+      showProgress(`Scanning ${completed} / ${urls.length}…`);
+    }
+
+    clearTimeout(wakeTimer);
+    hideWake();
+    hideProgress();
+    setLoading(false);
+    if (lastResults.length > 0) pdfBtn.classList.add('visible');
+    await loadHistory();
+    await loadStats();
+  }
+
+  // ── Append a single result card ───────────────────────────────────
+  function appendResult(url, cls, errMsg) {
+    const card = document.createElement('div');
+    card.className = 'result-card ' + (cls === 'ERROR' ? 'MALICIOUS' : cls);
+
+    const icon = document.createElement('div');
+    icon.className   = 'result-icon';
+    icon.textContent = cls === 'SAFE' ? '🛡️' : cls === 'MALICIOUS' ? '☠️' : '⚠️';
+
+    const body    = document.createElement('div');
+    const verdict = document.createElement('div');
+    verdict.className   = 'result-verdict';
+    verdict.textContent = cls === 'ERROR' ? 'ERROR' : cls;
+
+    const urlEl = document.createElement('div');
+    urlEl.className   = 'result-url';
+    urlEl.textContent = errMsg ? `${url} — ${errMsg}` : url;
+
+    body.appendChild(verdict);
+    body.appendChild(urlEl);
+    card.appendChild(icon);
+    card.appendChild(body);
+    resultsList.appendChild(card);
+  }
+
+  // ── PDF Download ──────────────────────────────────────────────────
+  function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc  = new jsPDF();
+    const now  = new Date().toLocaleString();
+    let   y    = 20;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(34, 197, 94);
+    doc.text('ReNoteAI — URL Shield Report', 14, y);
+    y += 8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Generated: ${now}   |   User: ${currentUserEmail}`, 14, y);
+    y += 10;
+
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, y, 196, y);
+    y += 8;
+
+    lastResults.forEach((r, i) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      const isSafe = r.classification === 'SAFE';
+
+      // Colored badge
+      doc.setFillColor(isSafe ? 34 : 239, isSafe ? 197 : 68, isSafe ? 94 : 68);
+      doc.roundedRect(14, y - 4, 28, 7, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text(r.classification, 28, y + 0.5, { align: 'center' });
+
+      // URL
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(50, 50, 50);
+      const urlText = doc.splitTextToSize(r.url, 150);
+      doc.text(urlText, 46, y);
+      y += urlText.length * 5 + 6;
+
+      doc.setDrawColor(230, 230, 230);
+      doc.line(14, y, 196, y);
+      y += 6;
+    });
+
+    // Summary
+    if (y > 250) { doc.addPage(); y = 20; }
+    y += 4;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(34, 197, 94);
+    const safe = lastResults.filter(r => r.classification === 'SAFE').length;
+    const mal  = lastResults.filter(r => r.classification === 'MALICIOUS').length;
+    doc.text(`Summary: ${safe} Safe  |  ${mal} Malicious  |  ${lastResults.length} Total`, 14, y);
+
+    doc.save(`url-shield-report-${Date.now()}.pdf`);
+  }
+
+  // ── Supabase: save ────────────────────────────────────────────────
+  async function saveScan(url, classification) {
+    if (!currentUserId) return;
+    try {
+      const { data: existing } = await _supabase
+        .from('scan_history').select('id')
+        .eq('user_id', currentUserId).eq('url', url).limit(1);
+      if (existing && existing.length > 0) {
+        await _supabase.from('scan_history')
+          .update({ classification, scanned_at: new Date().toISOString() })
+          .eq('user_id', currentUserId).eq('url', url);
+      } else {
+        await _supabase.from('scan_history')
+          .insert({ user_id: currentUserId, url, classification });
+      }
+    } catch (e) { console.warn('saveScan:', e.message); }
+  }
+
+  // ── Supabase: load history ────────────────────────────────────────
   async function loadHistory() {
+    if (!currentUserId) return;
     try {
       const { data, error } = await _supabase
-        .from('scan_history')
-        .select('url, classification')
+        .from('scan_history').select('url, classification')
         .eq('user_id', currentUserId)
-        .order('scanned_at', { ascending: false })
-        .limit(8);
+        .order('scanned_at', { ascending: false }).limit(8);
       if (error) throw error;
       if (data && data.length > 0) {
         history = data.map(r => ({ url: r.url, cls: r.classification }));
@@ -312,12 +471,12 @@
     } catch (e) { console.warn('loadHistory:', e.message); }
   }
 
-  // ── Load stats from Supabase ──────────────────────────────────────
+  // ── Supabase: load stats ──────────────────────────────────────────
   async function loadStats() {
+    if (!currentUserId) return;
     try {
       const { data, error } = await _supabase
-        .from('scan_history')
-        .select('classification')
+        .from('scan_history').select('classification')
         .eq('user_id', currentUserId);
       if (error) throw error;
       if (data) {
@@ -329,130 +488,23 @@
     } catch (e) { console.warn('loadStats:', e.message); }
   }
 
-  // ── Save scan to Supabase (with dedup check) ──────────────────────
-  // FIX #2: Skip insert if this URL was already scanned by this user.
-  async function saveScan(url, classification) {
-    try {
-      const { data: existing } = await _supabase
-        .from('scan_history')
-        .select('id')
-        .eq('user_id', currentUserId)
-        .eq('url', url)
-        .limit(1);
-
-      if (existing && existing.length > 0) {
-        // URL already in DB — update classification + timestamp instead
-        await _supabase
-          .from('scan_history')
-          .update({ classification, scanned_at: new Date().toISOString() })
-          .eq('user_id', currentUserId)
-          .eq('url', url);
-      } else {
-        await _supabase
-          .from('scan_history')
-          .insert({ user_id: currentUserId, url, classification });
-      }
-
-      // FIX #1: Re-sync stats from DB after save so counts are always accurate.
-      await loadStats();
-    } catch (e) { console.warn('saveScan:', e.message); }
-  }
-
-  // ── Validation ───────────────────────────────────────────────────
-  function validateURL(url) {
-    if (!url) return 'Please enter a URL to scan.';
-    try {
-      const p = new URL(url);
-      if (!['http:', 'https:'].includes(p.protocol)) return 'Only http:// and https:// URLs are allowed.';
-      if (!p.hostname.includes('.')) return 'URL must have a valid domain (e.g. example.com).';
-      return null;
-    } catch { return 'Invalid URL format. Use https://example.com'; }
-  }
-
-  // ── Scan ─────────────────────────────────────────────────────────
-  async function scanURL() {
-    const url = urlInput.value.trim();
-    const err = validateURL(url);
-    if (err) { showError(err); return; }
-
-    hideError(); hideWake();
-    resultArea.classList.remove('visible');
-    setLoading(true);
-
-    const controller = new AbortController();
-    const timer      = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    const wakeTimer  = setTimeout(showWake, WAKE_MS);
-
-    try {
-      const resp = await fetch(API, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-        signal: controller.signal
-      });
-      clearTimeout(timer); clearTimeout(wakeTimer); hideWake();
-      if (!resp.ok) throw new Error('Server returned ' + resp.status);
-      const data = await resp.json();
-      showResult(data.url, data.classification);
-      addHistory(data.url, data.classification);
-      // NOTE: updateStats is now handled inside saveScan via loadStats()
-      await saveScan(data.url, data.classification);
-    } catch (e) {
-      clearTimeout(timer); clearTimeout(wakeTimer); hideWake();
-      showError(e.name === 'AbortError'
-        ? 'Request timed out after 30s. Server may be waking up — please try again.'
-        : 'Cannot reach the backend. Make sure the server is running.');
-    } finally { setLoading(false); }
-  }
-
-  // ── Display helpers ──────────────────────────────────────────────
-  function showResult(url, cls) {
-    resultCard.className = 'result-card ' + cls;
-    document.getElementById('resultIcon').textContent    = icons[cls] || '❓';
-    document.getElementById('resultVerdict').textContent = cls;
-    document.getElementById('resultUrl').textContent     = url;
-    document.getElementById('resultDesc').textContent    = descriptions[cls] || 'Unknown.';
-    resultArea.classList.add('visible');
-  }
-
-  // FIX #2 (local): Dedup in-session history array too.
-  function addHistory(url, cls) {
-    // Remove existing entry for this URL if present, then re-insert at top
-    history = history.filter(h => h.url !== url);
-    history.unshift({ url, cls });
-    if (history.length > 8) history.pop();
-    renderHistory();
-  }
-
+  // ── Render history list ───────────────────────────────────────────
   function renderHistory() {
     document.getElementById('historySection').style.display = 'block';
     const list = document.getElementById('historyList');
     list.innerHTML = '';
     history.forEach(h => {
-      const item     = document.createElement('div');
+      const item = document.createElement('div');
       item.className = 'history-item';
+      item.addEventListener('click', () => { urlInput.value = h.url; urlInput.focus(); });
 
-      // FIX #3: Clicking a history item only populates the input — no auto-scan.
-      // User must press Scan (or Enter) themselves. Avoids surprise network requests.
-      item.addEventListener('click', () => {
-        urlInput.value = h.url;
-        urlInput.focus();
-        // Scroll input into view on mobile
-        urlInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
-
-      const badge       = document.createElement('span');
+      const badge = document.createElement('span');
       badge.className   = 'hist-badge ' + h.cls;
       badge.textContent = h.cls;
 
-      const urlSpan       = document.createElement('span');
+      const urlSpan = document.createElement('span');
       urlSpan.className   = 'hist-url';
-      urlSpan.textContent = h.url;   // textContent — no XSS
-
-      // Small hint so users know to press Scan
-      const hint       = document.createElement('span');
-      hint.className   = 'hist-hint';
-      hint.textContent = '↑ click to load';
+      urlSpan.textContent = h.url;
 
       item.appendChild(badge);
       item.appendChild(urlSpan);
@@ -460,16 +512,21 @@
     });
   }
 
+  // ── Helpers ──────────────────────────────────────────────────────
   function setLoading(on) { scanBtn.disabled = on; scanBtn.classList.toggle('loading', on); }
   function showError(msg) { errorBox.textContent = msg; errorBox.classList.add('visible'); }
   function hideError()    { errorBox.classList.remove('visible'); }
   function showWake()     { wakeBox.classList.add('visible'); }
   function hideWake()     { wakeBox.classList.remove('visible'); }
+  function showProgress(msg) { progressBox.textContent = msg; progressBox.classList.add('visible'); }
+  function hideProgress()    { progressBox.classList.remove('visible'); }
 
-  function clearURL() {
+  function clearAll() {
     urlInput.value = '';
-    resultArea.classList.remove('visible');
-    hideError(); hideWake();
+    resultsList.innerHTML = '';
+    lastResults = [];
+    pdfBtn.classList.remove('visible');
+    hideError(); hideWake(); hideProgress();
     urlInput.focus();
   }
 </script>
