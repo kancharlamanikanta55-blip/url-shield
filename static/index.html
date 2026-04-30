@@ -302,7 +302,7 @@
         .from('scan_history')
         .select('url, classification')
         .eq('user_id', currentUserId)
-        .order('created_at', { ascending: false })
+        .order('scanned_at', { ascending: false })
         .limit(8);
       if (error) throw error;
       if (data && data.length > 0) {
@@ -344,7 +344,7 @@
         // URL already in DB — update classification + timestamp instead
         await _supabase
           .from('scan_history')
-          .update({ classification, created_at: new Date().toISOString() })
+          .update({ classification, scanned_at: new Date().toISOString() })
           .eq('user_id', currentUserId)
           .eq('url', url);
       } else {
