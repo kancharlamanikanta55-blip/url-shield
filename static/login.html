@@ -75,7 +75,7 @@
 
   <div class="card">
     <div class="card-title" id="cardTitle">Welcome back</div>
-    <div class="card-sub">// sign in to your secure portal</div>
+    <div class="card-sub">// Get in to your secure portal</div>
     <div class="tabs">
       <button class="tab active" id="loginTab">Sign In</button>
       <button class="tab" id="signupTab">Sign Up</button>
@@ -143,6 +143,12 @@
     if (data.session) window.location.href = '/';
   });
 
+   _supabase.auth.onAuthStateChange((event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
+      window.location.href = '/';
+    }
+  });
+
   // Theme
   const themeBtn = document.getElementById('themeBtn');
   const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -205,12 +211,43 @@
     if (password !== confirm)  { showMsg('Passwords do not match!', 'error'); return; }
     if (password.length < 6)   { showMsg('Password must be at least 6 characters.', 'error'); return; }
     setLoading(btn, true);
-    const { error } = await _supabase.auth.signUp({ email, password });
-    if (error) { showMsg(error.message, 'error'); setLoading(btn, false); }
-    else { showMsg('Success! Check your email to confirm your account.', 'success'); btn.textContent = 'Check Email ✓'; }
+    const { data: signUpData, error } = await _supabase.auth.signUp({ email, password });
+  if (error) {
+  const msg = error.message.toLowerCase();
+  if (msg.includes('already registered') || msg.includes('user already exists') || msg.includes('email address is already')) {
+    showMsg('An account with this email already exists.', 'error', true);
+  } else {
+    showMsg(error.message, 'error');
   }
+  setLoading(btn, false);
+    return;
+  }
+  // No error — account created
+  // Supabase sometimes silently fails for existing emails — catches that too
+  if (signUpData?.user && !signUpData?.session) {
+    showMsg('Success! Check your email to confirm your account.', 'success');
+    btn.textContent = 'Check Email ✓';
+  } else if (signUpData?.session) {
+    showMsg('Account created! Redirecting...', 'success');
+    window.location.href = '/';
+  } else {
+    showMsg('An account with this email already exists.', 'error', true);
+    setLoading(btn, false);
+  }
+}
 
-  function showMsg(text, type) { const el = document.getElementById('msg'); el.textContent = text; el.className = 'msg ' + type; }
+  function showMsg(text, type, switchToLogin) {
+  const el = document.getElementById('msg');
+  el.innerHTML = text;
+  el.className = 'msg ' + type;
+  if (switchToLogin) {
+    const btn = document.createElement('button');
+    btn.style.cssText = 'display:block;margin-top:8px;background:none;border:none;color:var(--green);cursor:pointer;font-size:.82rem;text-decoration:underline;font-family:DM Mono,monospace;';
+    btn.textContent = 'Go to Sign In →';
+    btn.onclick = () => switchTab('login');
+    el.appendChild(btn);
+  }
+}
   function hideMsg() { document.getElementById('msg').className = 'msg'; }
   function setLoading(btn, on) {
     btn.disabled = on;
