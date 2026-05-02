@@ -39,6 +39,10 @@ async def root():
 async def login_page():
     return FileResponse("static/login.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
+@app.get("/reset-password")
+async def reset_password_page():
+    return FileResponse("static/reset-password.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+    
 @app.get("/index")
 async def index_page():
     return FileResponse("static/index.html", headers={"Cache-Control": "no-cache, no-store, must-revalidate"})

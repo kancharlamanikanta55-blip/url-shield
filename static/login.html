@@ -37,17 +37,19 @@
     .tab.active { background: var(--green); color: #fff; }
     .form-group { margin-bottom: 16px; }
     .form-label { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 8px; display: block; }
-
-    /* Password field with eye icon */
     .input-wrap { position: relative; }
     .form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 44px 14px 16px; font-family: 'DM Mono', monospace; font-size: .9rem; color: var(--text); outline: none; transition: border-color .2s, box-shadow .2s; }
+    .form-input.no-icon { padding-right: 16px; }
     .form-input:focus { border-color: var(--green-dim); box-shadow: 0 0 0 3px var(--green-faint); }
     .eye-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; display: flex; align-items: center; transition: color .2s; }
     .eye-btn:hover { color: var(--text); }
-
     .submit-btn { width: 100%; padding: 14px; background: var(--green); color: #fff; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; border: none; border-radius: 10px; cursor: pointer; transition: filter .2s; margin-top: 8px; }
     .submit-btn:hover { filter: brightness(1.1); }
     .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(1); }
+    .forgot-link { display: block; text-align: right; margin-top: 8px; font-size: .78rem; font-family: 'DM Mono', monospace; color: var(--green); cursor: pointer; transition: opacity .2s; border: none; background: none; padding: 0; width: 100%; }
+    .forgot-link:hover { opacity: 0.7; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-family: 'DM Mono', monospace; color: var(--muted); cursor: pointer; margin-bottom: 20px; transition: color .2s; border: none; background: none; padding: 0; }
+    .back-link:hover { color: var(--text); }
     .msg { margin-top: 16px; padding: 12px 16px; border-radius: 10px; font-family: 'DM Mono', monospace; font-size: .82rem; display: none; }
     .msg.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: var(--green); display: block; }
     .msg.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: var(--red); display: block; }
@@ -75,8 +77,10 @@
 
   <div class="card">
     <div class="card-title" id="cardTitle">Welcome back</div>
-    <div class="card-sub">// Get in to your secure portal</div>
-    <div class="tabs">
+    <div class="card-sub" id="cardSub">// Get in to your secure portal</div>
+
+    <!-- Tabs -->
+    <div class="tabs" id="tabsRow">
       <button class="tab active" id="loginTab">Sign In</button>
       <button class="tab" id="signupTab">Sign Up</button>
     </div>
@@ -86,7 +90,7 @@
       <div class="form-group">
         <label class="form-label">Email</label>
         <div class="input-wrap">
-          <input class="form-input" id="loginEmail" type="email" placeholder="you@example.com"/>
+          <input class="form-input no-icon" id="loginEmail" type="email" placeholder="you@example.com"/>
         </div>
       </div>
       <div class="form-group">
@@ -94,10 +98,11 @@
         <div class="input-wrap">
           <input class="form-input" id="loginPassword" type="password" placeholder="••••••••"/>
           <button class="eye-btn" type="button" onclick="toggleEye('loginPassword', this)">
-            <svg id="eyeIcon1" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
       </div>
+      <button class="forgot-link" onclick="showForgot()">Forgot password?</button>
       <button class="submit-btn" id="signInBtn">Sign In →</button>
     </div>
 
@@ -106,7 +111,7 @@
       <div class="form-group">
         <label class="form-label">Email</label>
         <div class="input-wrap">
-          <input class="form-input" id="signupEmail" type="email" placeholder="you@example.com"/>
+          <input class="form-input no-icon" id="signupEmail" type="email" placeholder="you@example.com"/>
         </div>
       </div>
       <div class="form-group">
@@ -129,6 +134,19 @@
       </div>
       <button class="submit-btn" id="signUpBtn">Create Account →</button>
     </div>
+
+    <!-- Forgot Password Form -->
+    <div id="forgotForm" style="display:none;">
+      <button class="back-link" onclick="hideForgot()">← Back to Sign In</button>
+      <div class="form-group">
+        <label class="form-label">Your Email</label>
+        <div class="input-wrap">
+          <input class="form-input no-icon" id="forgotEmail" type="email" placeholder="you@example.com"/>
+        </div>
+      </div>
+      <button class="submit-btn" id="resetBtn">Send Reset Link →</button>
+    </div>
+
     <div class="msg" id="msg"></div>
   </div>
   <footer>ReNoteAI &nbsp;·&nbsp; URL Shield &nbsp;·&nbsp; <span>url-shield-psms.onrender.com</span></footer>
@@ -143,7 +161,7 @@
     if (data.session) window.location.href = '/';
   });
 
-   _supabase.auth.onAuthStateChange((event, session) => {
+  _supabase.auth.onAuthStateChange((event, session) => {
     if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
       window.location.href = '/';
     }
@@ -177,17 +195,33 @@
   function switchTab(tab) {
     document.getElementById('loginForm').style.display  = tab === 'login'  ? 'block' : 'none';
     document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
+    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('tabsRow').style.display    = 'flex';
     document.getElementById('loginTab').classList.toggle('active',  tab === 'login');
     document.getElementById('signupTab').classList.toggle('active', tab === 'signup');
-    document.getElementById('cardTitle').textContent = tab === 'login' ? 'Welcome back' : 'Get Started';
+    document.getElementById('cardTitle').textContent    = tab === 'login' ? 'Welcome back' : 'Get Started';
+    document.getElementById('cardSub').textContent      = '// Get in to your secure portal';
     hideMsg();
   }
 
-  // Enter key
-  document.getElementById('loginPassword').addEventListener('keydown',  e => { if (e.key === 'Enter') signIn(); });
-  document.getElementById('signupConfirm').addEventListener('keydown',  e => { if (e.key === 'Enter') signUp(); });
+  // Forgot password
+  function showForgot() {
+    document.getElementById('loginForm').style.display  = 'none';
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'block';
+    document.getElementById('tabsRow').style.display    = 'none';
+    document.getElementById('cardTitle').textContent    = 'Reset Password';
+    document.getElementById('cardSub').textContent      = "// We'll send a reset link to your email";
+    hideMsg();
+  }
+  function hideForgot() { switchTab('login'); }
 
-  // Sign In
+  // Enter keys
+  document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+  document.getElementById('signupConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') signUp(); });
+  document.getElementById('forgotEmail').addEventListener('keydown',   e => { if (e.key === 'Enter') sendReset(); });
+
+  // ── Sign In ──
   document.getElementById('signInBtn').addEventListener('click', signIn);
   async function signIn() {
     const email    = document.getElementById('loginEmail').value.trim();
@@ -200,7 +234,7 @@
     else { showMsg('Authenticating...', 'success'); window.location.href = '/'; }
   }
 
-  // Sign Up
+  // ── Sign Up ──
   document.getElementById('signUpBtn').addEventListener('click', signUp);
   async function signUp() {
     const email    = document.getElementById('signupEmail').value.trim();
@@ -212,42 +246,80 @@
     if (password.length < 6)   { showMsg('Password must be at least 6 characters.', 'error'); return; }
     setLoading(btn, true);
     const { data: signUpData, error } = await _supabase.auth.signUp({ email, password });
-  if (error) {
-  const msg = error.message.toLowerCase();
-  if (msg.includes('already registered') || msg.includes('user already exists') || msg.includes('email address is already')) {
-    showMsg('An account with this email already exists.', 'error', true);
-  } else {
-    showMsg(error.message, 'error');
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('already registered') || msg.includes('user already exists') || msg.includes('email address is already')) {
+        showMsg('An account with this email already exists.', 'error', true);
+      } else {
+        showMsg(error.message, 'error');
+      }
+      setLoading(btn, false);
+      return;
+    }
+    if (signUpData?.user && !signUpData?.session) {
+      showMsg('✅ Account created! Check your email to confirm, then come back here to Sign In.', 'success');
+      btn.textContent = 'Check Email ✓';
+      setTimeout(() => switchTab('login'), 3000);
+    } else if (signUpData?.session) {
+      showMsg('Account created! Redirecting...', 'success');
+      window.location.href = '/';
+    } else {
+      showMsg('An account with this email already exists.', 'error', true);
+      setLoading(btn, false);
+    }
   }
-  setLoading(btn, false);
-    return;
-  }
-  // No error — account created
-  // Supabase sometimes silently fails for existing emails — catches that too
-  if (signUpData?.user && !signUpData?.session) {
-    showMsg('Success! Check your email to confirm your account.', 'success');
-    btn.textContent = 'Check Email ✓';
-  } else if (signUpData?.session) {
-    showMsg('Account created! Redirecting...', 'success');
-    window.location.href = '/';
-  } else {
-    showMsg('An account with this email already exists.', 'error', true);
-    setLoading(btn, false);
-  }
-}
 
-  function showMsg(text, type, switchToLogin) {
-  const el = document.getElementById('msg');
-  el.innerHTML = text;
-  el.className = 'msg ' + type;
-  if (switchToLogin) {
-    const btn = document.createElement('button');
-    btn.style.cssText = 'display:block;margin-top:8px;background:none;border:none;color:var(--green);cursor:pointer;font-size:.82rem;text-decoration:underline;font-family:DM Mono,monospace;';
-    btn.textContent = 'Go to Sign In →';
-    btn.onclick = () => switchTab('login');
-    el.appendChild(btn);
+  // ── Reset Password ──
+  document.getElementById('resetBtn').addEventListener('click', sendReset);
+  async function sendReset() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    const btn   = document.getElementById('resetBtn');
+    if (!email) { showMsg('Please enter your email address.', 'error'); return; }
+    setLoading(btn, true);
+
+    // Try to sign up with existing email — if user exists it returns specific error
+    const { data: signUpData, error: signUpError } = await _supabase.auth.signUp({
+      email,
+      password: 'dummy-check-12345'
+    });
+
+    
+
+    // If no error and user returned with no identities → user already exists
+    // If no error and new user created → user did NOT exist
+    const userAlreadyExists = signUpData?.user?.identities?.length === 0;
+
+    if (!userAlreadyExists) {
+      // Delete the dummy account we just created
+      showMsg('No account found with this email. Please sign up first.', 'error');
+      setLoading(btn, false);
+      return;
+    }
+
+    const redirectTo = window.location.origin + '/reset-password';
+    const { error } = await _supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) {
+      showMsg(error.message, 'error');
+      setLoading(btn, false);
+    } else {
+      showMsg('✅ Reset link sent! Check your inbox and spam folder.', 'success');
+      btn.textContent = 'Email Sent ✓';
+      btn.disabled = true;
+    }
   }
-}
+  
+  function showMsg(text, type, switchToLogin) {
+    const el = document.getElementById('msg');
+    el.innerHTML = text;
+    el.className = 'msg ' + type;
+    if (switchToLogin) {
+      const btn = document.createElement('button');
+      btn.style.cssText = 'display:block;margin-top:8px;background:none;border:none;color:var(--green);cursor:pointer;font-size:.82rem;text-decoration:underline;font-family:DM Mono,monospace;';
+      btn.textContent = 'Go to Sign In →';
+      btn.onclick = () => switchTab('login');
+      el.appendChild(btn);
+    }
+  }
   function hideMsg() { document.getElementById('msg').className = 'msg'; }
   function setLoading(btn, on) {
     btn.disabled = on;
